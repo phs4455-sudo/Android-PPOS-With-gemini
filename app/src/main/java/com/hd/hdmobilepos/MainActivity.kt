@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -776,6 +777,9 @@ fun MainNavHost(vm: MainViewModel) {
                 superHomeVm = superHomeVm,
                 onNavigateToProductRegister = { barcode ->
                     navController.navigate(productRegisterRoute(barcode))
+                },
+                onNavigateToRestaurant = {
+                    navController.navigate(ROUTE_RESTAURANT)
                 }
             )
         }
@@ -869,7 +873,8 @@ private fun PosTopActionButton(label: String, icon: androidx.compose.ui.graphics
 @Composable
 fun SuperHomeScreen(
     superHomeVm: SuperHomeViewModel,
-    onNavigateToProductRegister: (String?) -> Unit
+    onNavigateToProductRegister: (String?) -> Unit,
+    onNavigateToRestaurant: () -> Unit
 ) {
     val uiState by superHomeVm.uiState.collectAsState()
     val focusRequester = remember { FocusRequester() }
@@ -956,7 +961,11 @@ fun SuperHomeScreen(
                     ) {
                         gridItems(listOf("즐겨찾기", "행사보관", "영수증 조회", "소비기한 등록", "상품조회", "포인트 조회", "보류/복원", "도중회수")) { label ->
                             Button(
-                                onClick = {},
+                                onClick = {
+                                    if (label == "즐겨찾기") {
+                                        onNavigateToRestaurant()
+                                    }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(88.dp),
