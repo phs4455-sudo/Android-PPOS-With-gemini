@@ -168,14 +168,22 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun FoodCourtScreen(navController: NavHostController, vm: MainViewModel, tableId: Long?) {
+fun FoodCourtScreen(navController: NavHostController, vm: FoodCourtViewModel, tableId: Long?) {
     val uiState by vm.uiState.collectAsState()
     var priceEditItem by remember { mutableStateOf<RightPanelItemUi?>(null) }
     var priceInput by remember { mutableStateOf("") }
     var showCancelAllDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(tableId) {
         tableId?.let(vm::selectTable)
+    }
+
+
+    LaunchedEffect(uiState.snackbarMessage) {
+        val msg = uiState.snackbarMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
+        vm.consumeSnackbarMessage()
     }
 
     val menusByCategory = remember {
@@ -207,14 +215,15 @@ fun FoodCourtScreen(navController: NavHostController, vm: MainViewModel, tableId
     } else {
         menusByCategory[currentCategory].orEmpty()
     }
-    val selectedTable = uiState.tables.firstOrNull { it.tableId == uiState.selectedTableId }
+    val selectedTable = uiState.selectedTable
     val panelItems = uiState.rightPanel?.items.orEmpty()
     val totalAmount = uiState.rightPanel?.derivedTotalAmount ?: 0
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = { PosTopBar() },
-        containerColor = Color(0xFFF6F2E9)
+        containerColor = Color(0xFFF6F2E9),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Row(
             modifier = Modifier
