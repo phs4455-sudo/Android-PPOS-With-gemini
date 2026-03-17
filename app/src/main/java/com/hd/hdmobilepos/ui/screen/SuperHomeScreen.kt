@@ -424,4 +424,3 @@ private fun SuperUtilityBar(labels: List<String>) {
     }
 }
 
-@Composable

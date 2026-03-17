@@ -770,5 +770,3 @@ private fun ActiveOrderDetails.toRightPanelUi(): RightOrderPanelUi {
     )
 }
 
-@Composable
-

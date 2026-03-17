@@ -1005,4 +1005,3 @@ private fun ManualBarcodeKeypad(
     }
 }
 
-@Composable
