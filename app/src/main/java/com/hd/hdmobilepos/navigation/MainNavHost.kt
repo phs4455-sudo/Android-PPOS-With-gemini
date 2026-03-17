@@ -178,6 +178,7 @@ private fun productRegisterRoute(barcode: String? = null): String {
     return if (barcode.isNullOrBlank()) ROUTE_PRODUCT_REGISTER else "$ROUTE_PRODUCT_REGISTER?$ARG_BARCODE=${Uri.encode(barcode)}"
 }
 
+@Composable
 fun MainNavHost(vm: MainViewModel) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = ROUTE_SUPER_HOME) {

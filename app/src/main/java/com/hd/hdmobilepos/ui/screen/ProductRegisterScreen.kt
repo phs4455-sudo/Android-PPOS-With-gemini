@@ -167,6 +167,7 @@ import kotlin.math.roundToInt
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+@Composable
 fun ProductRegisterScreen(
     barcode: String?,
     onNavigateHome: () -> Unit

@@ -167,6 +167,7 @@ import kotlin.math.roundToInt
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+@Composable
 fun RestaurantScreen(navController: NavHostController, vm: MainViewModel) {
     val uiState by vm.uiState.collectAsState()
     val selectedTable = uiState.tables.firstOrNull { it.tableId == uiState.selectedTableId }

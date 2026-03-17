@@ -167,6 +167,7 @@ import kotlin.math.roundToInt
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+@Composable
 fun FoodCourtScreen(navController: NavHostController, vm: MainViewModel, tableId: Long?) {
     val uiState by vm.uiState.collectAsState()
     var priceEditItem by remember { mutableStateOf<RightPanelItemUi?>(null) }
