@@ -183,14 +183,25 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PPOSTheme {
-                val factory = remember {
-                    object : ViewModelProvider.Factory {
-                        @Suppress("UNCHECKED_CAST")
-                        override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(repo) as T
+                val restaurantVm: RestaurantViewModel = viewModel(
+                    key = "restaurant_vm",
+                    factory = remember {
+                        object : ViewModelProvider.Factory {
+                            @Suppress("UNCHECKED_CAST")
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T = RestaurantViewModel(repo) as T
+                        }
                     }
-                }
-                val vm: MainViewModel = viewModel(factory = factory)
-                MainNavHost(vm = vm)
+                )
+                val foodCourtVm: FoodCourtViewModel = viewModel(
+                    key = "food_court_vm",
+                    factory = remember {
+                        object : ViewModelProvider.Factory {
+                            @Suppress("UNCHECKED_CAST")
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T = FoodCourtViewModel(repo) as T
+                        }
+                    }
+                )
+                MainNavHost(restaurantVm = restaurantVm, foodCourtVm = foodCourtVm)
             }
         }
     }
@@ -369,7 +380,7 @@ data class MainUiState(
     val reseedMessage: String? = null
 )
 
-class MainViewModel(private val repository: PosRepository) : ViewModel() {
+class RestaurantViewModel(private val repository: PosRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
@@ -416,249 +427,6 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
         observeRightPanel(tableId)
     }
 
-
-    fun buildPaymentSnapshot(tableId: Long?): PaymentOrderSnapshot {
-        val state = _uiState.value
-        val resolvedTableId = tableId ?: state.selectedTableId
-        val table = state.tables.firstOrNull { it.tableId == resolvedTableId }
-        val panel = state.rightPanel
-        val items = panel?.items?.map { PaymentOrderItemUi(name = it.itemName, qty = it.qty, price = it.lineTotal) }.orEmpty()
-        val total = panel?.derivedTotalAmount ?: 0
-        return PaymentOrderSnapshot(
-            tableId = resolvedTableId,
-            tableName = table?.tableName ?: "선택된 테이블 없음",
-            items = items,
-            totalAmount = total,
-            receivedAmount = total
-        )
-    }
-
-    fun startMoveMode() {
-        val sourceId = _uiState.value.selectedTableId
-        if (sourceId == null) {
-            pushSnackbar("먼저 원본 테이블을 선택하세요")
-            return
-        }
-        if (_uiState.value.rightPanel == null) {
-            pushSnackbar("이동할 활성 주문이 없습니다")
-            return
-        }
-        _uiState.update {
-            it.copy(
-                uiMode = UiMode.SELECT_TARGET_FOR_MOVE,
-                selectedSourceTableId = sourceId,
-                selectedTargetTableId = null,
-                pendingAction = null
-            )
-        }
-    }
-
-    fun startMergeMode() {
-        val sourceId = _uiState.value.selectedTableId
-        if (sourceId == null) {
-            pushSnackbar("먼저 원본 테이블을 선택하세요")
-            return
-        }
-        if (_uiState.value.rightPanel == null) {
-            pushSnackbar("합석할 활성 주문이 없습니다")
-            return
-        }
-        _uiState.update {
-            it.copy(
-                uiMode = UiMode.SELECT_TARGET_FOR_MERGE,
-                selectedSourceTableId = sourceId,
-                selectedTargetTableId = null,
-                pendingAction = null
-            )
-        }
-    }
-
-    fun onTableTileClicked(tableId: Long, status: String) {
-        val state = _uiState.value
-        if (state.uiMode == UiMode.NORMAL) {
-            selectTable(tableId)
-            return
-        }
-
-        val sourceId = state.selectedSourceTableId
-        if (sourceId == null) {
-            _uiState.update { it.copy(uiMode = UiMode.NORMAL) }
-            return
-        }
-        if (status == "DISABLED") {
-            pushSnackbar("사용불가 테이블은 선택할 수 없습니다")
-            return
-        }
-        if (sourceId == tableId) {
-            pushSnackbar("다른 대상 테이블을 선택하세요")
-            return
-        }
-
-        viewModelScope.launch {
-            if (state.uiMode == UiMode.SELECT_TARGET_FOR_MERGE && !repository.hasActiveOrder(tableId)) {
-                pushSnackbar("합석은 양쪽 테이블에 활성 주문이 있어야 합니다")
-                return@launch
-            }
-            val type = if (state.uiMode == UiMode.SELECT_TARGET_FOR_MOVE) TableActionType.MOVE else TableActionType.MERGE
-            _uiState.update {
-                it.copy(
-                    selectedTargetTableId = tableId,
-                    pendingAction = PendingTableAction(
-                        type = type,
-                        sourceTableId = sourceId,
-                        targetTableId = tableId
-                    )
-                )
-            }
-        }
-    }
-
-    fun dismissPendingAction() {
-        _uiState.update { it.copy(pendingAction = null, selectedTargetTableId = null, uiMode = UiMode.NORMAL) }
-    }
-
-    fun confirmPendingAction() {
-        val action = _uiState.value.pendingAction ?: return
-        viewModelScope.launch {
-            when (action.type) {
-                TableActionType.MOVE -> {
-                    val moved = repository.moveActiveOrder(action.sourceTableId, action.targetTableId)
-                    if (!moved) pushSnackbar("이동할 활성 주문이 없습니다")
-                }
-
-                TableActionType.MERGE -> {
-                    repository.mergeTables(action.sourceTableId, action.targetTableId)
-                    pushSnackbar("합석 처리되었습니다")
-                }
-            }
-            _uiState.update {
-                it.copy(
-                    pendingAction = null,
-                    selectedTargetTableId = null,
-                    uiMode = UiMode.NORMAL,
-                    selectedTableId = action.targetTableId,
-                    selectedSourceTableId = action.targetTableId
-                )
-            }
-            observeRightPanel(action.targetTableId)
-        }
-    }
-
-    fun consumeSnackbarMessage() {
-        _uiState.update { it.copy(snackbarMessage = null) }
-    }
-
-    fun onTableDropped(sourceTableId: Long, targetTableId: Long) {
-        if (sourceTableId == targetTableId) return
-        val targetTable = _uiState.value.tables.firstOrNull { it.tableId == targetTableId } ?: return
-        if (targetTable.status == "DISABLED") {
-            pushSnackbar("사용불가 테이블은 대상이 될 수 없습니다")
-            return
-        }
-
-        viewModelScope.launch {
-            if (!repository.hasActiveOrder(sourceTableId)) {
-                pushSnackbar("원본 테이블에 활성 주문이 없습니다")
-                return@launch
-            }
-            val targetHasActiveOrder = repository.hasActiveOrder(targetTableId)
-            if (targetHasActiveOrder) {
-                _uiState.update {
-                    it.copy(
-                        selectedTargetTableId = targetTableId,
-                        pendingAction = PendingTableAction(
-                            type = TableActionType.MERGE,
-                            sourceTableId = sourceTableId,
-                            targetTableId = targetTableId
-                        )
-                    )
-                }
-                return@launch
-            }
-
-            val moved = repository.moveActiveOrder(sourceTableId, targetTableId)
-            if (!moved) {
-                pushSnackbar("이동할 활성 주문이 없습니다")
-                return@launch
-            }
-            pushSnackbar("이동 처리되었습니다")
-
-            _uiState.update {
-                it.copy(
-                    selectedTableId = targetTableId,
-                    selectedSourceTableId = targetTableId,
-                    selectedTargetTableId = null,
-                    uiMode = UiMode.NORMAL,
-                    pendingAction = null
-                )
-            }
-            observeRightPanel(targetTableId)
-        }
-    }
-
-    fun addMenuToSelectedTable(menuName: String, price: Int) {
-        val tableId = _uiState.value.selectedTableId ?: return
-        viewModelScope.launch {
-            repository.addMenuToTable(tableId = tableId, menuName = menuName, price = price)
-        }
-    }
-
-    fun increaseOrderItemQty(orderItemId: Long) {
-        val orderId = _uiState.value.rightPanel?.orderId ?: return
-        viewModelScope.launch {
-            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = 1)
-        }
-    }
-
-    fun decreaseOrderItemQty(orderItemId: Long) {
-        val panel = _uiState.value.rightPanel ?: return
-        val target = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
-        if (target.qty <= 1) {
-            pushSnackbar("수량은 1 이상이어야 합니다")
-            return
-        }
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = -1)
-        }
-    }
-
-    fun changeOrderItemUnitPrice(orderItemId: Long, newPrice: Int) {
-        if (newPrice <= 0) {
-            pushSnackbar("금액은 1원 이상이어야 합니다")
-            return
-        }
-        val panel = _uiState.value.rightPanel ?: return
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = newPrice)
-        }
-    }
-
-    fun toggleOrderItemCanceled(orderItemId: Long) {
-        val panel = _uiState.value.rightPanel ?: return
-        val item = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            if (item.priceSnapshot > 0) {
-                canceledPriceMemory[orderItemId] = item.priceSnapshot
-                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = 0)
-                pushSnackbar("상품 지정취소 처리되었습니다")
-            } else {
-                val restorePrice = canceledPriceMemory[orderItemId] ?: 8000
-                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = restorePrice)
-                pushSnackbar("상품 지정취소가 해제되었습니다")
-            }
-        }
-    }
-
-    fun cancelAllCurrentOrderItems() {
-        val orderId = _uiState.value.rightPanel?.orderId ?: return
-        viewModelScope.launch {
-            repository.cancelAllOrderItems(orderId)
-            pushSnackbar("주문내역이 전체 취소되었습니다")
-        }
-    }
 
     private fun pushSnackbar(message: String) {
         _uiState.update { it.copy(snackbarMessage = message) }
@@ -742,6 +510,131 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
     }
 }
 
+data class FoodCourtUiState(
+    val selectedTableId: Long? = null,
+    val selectedTable: TableSummary? = null,
+    val rightPanel: RightOrderPanelUi? = null,
+    val snackbarMessage: String? = null
+)
+
+class FoodCourtViewModel(private val repository: PosRepository) : ViewModel() {
+    private val _uiState = MutableStateFlow(FoodCourtUiState())
+    val uiState: StateFlow<FoodCourtUiState> = _uiState.asStateFlow()
+
+    private var selectedTableObserverJob: Job? = null
+    private var rightPanelObserverJob: Job? = null
+    private val canceledPriceMemory = mutableMapOf<Long, Int>()
+
+    fun selectTable(tableId: Long) {
+        if (_uiState.value.selectedTableId == tableId) return
+        _uiState.update { it.copy(selectedTableId = tableId) }
+        observeSelectedTable(tableId)
+        observeRightPanel(tableId)
+    }
+
+    fun buildPaymentSnapshot(tableId: Long?): PaymentOrderSnapshot {
+        val state = _uiState.value
+        val resolvedTableId = tableId ?: state.selectedTableId
+        val items = state.rightPanel?.items?.map { PaymentOrderItemUi(name = it.itemName, qty = it.qty, price = it.lineTotal) }.orEmpty()
+        val total = state.rightPanel?.derivedTotalAmount ?: 0
+        return PaymentOrderSnapshot(
+            tableId = resolvedTableId,
+            tableName = state.selectedTable?.tableName ?: "선택된 테이블 없음",
+            items = items,
+            totalAmount = total,
+            receivedAmount = total
+        )
+    }
+
+    fun consumeSnackbarMessage() {
+        _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+    fun addMenuToSelectedTable(menuName: String, price: Int) {
+        val tableId = _uiState.value.selectedTableId ?: return
+        viewModelScope.launch {
+            repository.addMenuToTable(tableId = tableId, menuName = menuName, price = price)
+        }
+    }
+
+    fun increaseOrderItemQty(orderItemId: Long) {
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = 1)
+        }
+    }
+
+    fun decreaseOrderItemQty(orderItemId: Long) {
+        val panel = _uiState.value.rightPanel ?: return
+        val target = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
+        if (target.qty <= 1) {
+            pushSnackbar("수량은 1 이상이어야 합니다")
+            return
+        }
+        viewModelScope.launch {
+            repository.changeOrderItemQty(orderId = panel.orderId, orderItemId = orderItemId, delta = -1)
+        }
+    }
+
+    fun changeOrderItemUnitPrice(orderItemId: Long, newPrice: Int) {
+        if (newPrice <= 0) {
+            pushSnackbar("금액은 1원 이상이어야 합니다")
+            return
+        }
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = newPrice)
+        }
+    }
+
+    fun toggleOrderItemCanceled(orderItemId: Long) {
+        val panel = _uiState.value.rightPanel ?: return
+        val item = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
+        val orderId = panel.orderId
+        viewModelScope.launch {
+            if (item.priceSnapshot > 0) {
+                canceledPriceMemory[orderItemId] = item.priceSnapshot
+                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = 0)
+                pushSnackbar("상품 지정취소 처리되었습니다")
+            } else {
+                val restorePrice = canceledPriceMemory[orderItemId] ?: 8000
+                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = restorePrice)
+                pushSnackbar("상품 지정취소가 해제되었습니다")
+            }
+        }
+    }
+
+    fun cancelAllCurrentOrderItems() {
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.cancelAllOrderItems(orderId)
+            pushSnackbar("주문내역이 전체 취소되었습니다")
+        }
+    }
+
+    private fun observeSelectedTable(tableId: Long) {
+        selectedTableObserverJob?.cancel()
+        selectedTableObserverJob = viewModelScope.launch {
+            repository.observeTableSummaryById(tableId).collectLatest { table ->
+                _uiState.update { it.copy(selectedTable = table) }
+            }
+        }
+    }
+
+    private fun observeRightPanel(tableId: Long) {
+        rightPanelObserverJob?.cancel()
+        rightPanelObserverJob = viewModelScope.launch {
+            repository.observeActiveOrderDetails(tableId).collectLatest { activeOrder ->
+                _uiState.update { it.copy(rightPanel = activeOrder?.toRightPanelUi()) }
+            }
+        }
+    }
+
+    private fun pushSnackbar(message: String) {
+        _uiState.update { it.copy(snackbarMessage = message) }
+    }
+}
+
 
 internal fun formatAmount(value: Int): String = String.format(Locale.KOREA, "%,d", value)
 
@@ -769,4 +662,3 @@ private fun ActiveOrderDetails.toRightPanelUi(): RightOrderPanelUi {
         isTotalMismatch = orderTotalAmount != derivedTotalAmount
     )
 }
-
