@@ -1,5 +1,7 @@
-package com.hd.hdmobilepos
+package com.hd.hdmobilepos.navigation
 
+import com.hd.hdmobilepos.*
+import com.hd.hdmobilepos.ui.screen.*
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity

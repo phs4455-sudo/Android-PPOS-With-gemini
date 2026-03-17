@@ -150,6 +150,7 @@ import com.hd.hdmobilepos.data.Area
 import com.hd.hdmobilepos.data.AppDatabase
 import com.hd.hdmobilepos.data.PosRepository
 import com.hd.hdmobilepos.data.TableSummary
+import com.hd.hdmobilepos.navigation.MainNavHost
 import com.hd.hdmobilepos.ui.component.PosTopBar
 import com.hd.hdmobilepos.ui.theme.PPOSTheme
 import kotlinx.coroutines.Job
