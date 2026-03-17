@@ -150,6 +150,7 @@ import com.hd.hdmobilepos.data.Area
 import com.hd.hdmobilepos.data.AppDatabase
 import com.hd.hdmobilepos.data.PosRepository
 import com.hd.hdmobilepos.data.TableSummary
+import com.hd.hdmobilepos.ui.component.PosTopBar
 import com.hd.hdmobilepos.ui.theme.PPOSTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -162,8 +163,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -826,61 +825,6 @@ fun MainNavHost(vm: MainViewModel) {
         }
     }
 }
-
-@Composable
-private fun PosTopBar() {
-    val now = rememberCurrentDateTime()
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd (E)") }
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss") }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFF5F5F5))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Text(
-            "THE HYUNDAI",
-            fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF005645),
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Spacer(Modifier.width(6.dp))
-        Column {
-            Text(now.format(dateFormatter), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.Gray)
-            Text(now.format(timeFormatter), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.width(6.dp))
-        Surface(color = Color(0xFFE7E7E7), shape = MaterialTheme.shapes.small) {
-            Text("포스: 5556", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
-        }
-        Spacer(Modifier.width(4.dp))
-        Surface(color = Color(0xFFE7E7E7), shape = MaterialTheme.shapes.small) {
-            Text("거래: 0014", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
-        }
-        Spacer(Modifier.weight(1f))
-        PosTopActionButton("점검", Icons.Filled.CheckCircle)
-        PosTopActionButton("조회", Icons.Filled.Search)
-        PosTopActionButton("영수증 재출력", Icons.Filled.Print)
-        PosTopActionButton("더보기", Icons.Filled.MoreVert)
-    }
-}
-
-@Composable
-private fun PosTopActionButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    OutlinedButton(
-        onClick = {},
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(14.dp)
-    ) {
-        Icon(icon, contentDescription = label, modifier = Modifier.padding(end = 4.dp), tint = Color.Black)
-        Text(label, color = Color.Black)
-    }
-}
-
 
 @Composable
 fun SuperHomeScreen(
@@ -1976,18 +1920,6 @@ private fun ManualBarcodeKeypad(
             }
         }
     }
-}
-
-@Composable
-private fun rememberCurrentDateTime(): LocalDateTime {
-    var now by remember { mutableStateOf(LocalDateTime.now()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            now = LocalDateTime.now()
-            kotlinx.coroutines.delay(1000)
-        }
-    }
-    return now
 }
 
 @Composable
