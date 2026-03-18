@@ -455,6 +455,25 @@ class FoodCourtViewModel(private val repository: PosRepository) : ViewModel() {
         }
     }
 
+
+    private fun observeSelectedTable(tableId: Long) {
+        selectedTableObserverJob?.cancel()
+        selectedTableObserverJob = viewModelScope.launch {
+            repository.observeTableSummaryById(tableId).collectLatest { table ->
+                _uiState.update { it.copy(selectedTable = table) }
+            }
+        }
+    }
+
+    private fun observeRightPanel(tableId: Long) {
+        rightPanelObserverJob?.cancel()
+        rightPanelObserverJob = viewModelScope.launch {
+            repository.observeActiveOrderDetails(tableId).collectLatest { activeOrder ->
+                _uiState.update { it.copy(rightPanel = activeOrder?.toRightPanelUi()) }
+            }
+        }
+    }
+
     private fun pushSnackbar(message: String) {
         _uiState.update { it.copy(snackbarMessage = message) }
     }
