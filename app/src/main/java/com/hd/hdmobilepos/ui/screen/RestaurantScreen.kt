@@ -188,7 +188,7 @@ fun RestaurantScreen(navController: NavHostController, vm: RestaurantViewModel) 
                                             }
                                         }
                                         .zIndex(if (draggingTableId == table.tableId) 10f else 0f)
-                                        .border(
+                                        .then(androidx.compose.foundation.border(
                                             width = when {
                                                 isDragActiveSource -> 4.dp
                                                 selected || isSelectedTarget -> 2.dp
@@ -202,7 +202,7 @@ fun RestaurantScreen(navController: NavHostController, vm: RestaurantViewModel) 
                                                 else -> Color(0xFFDADCE0)
                                             },
                                             shape = RoundedCornerShape(10.dp)
-                                        )
+                                        ))
                                         .pointerInput(table.tableId) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
