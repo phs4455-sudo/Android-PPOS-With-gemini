@@ -1,149 +1,20 @@
 package com.hd.hdmobilepos
 
-import android.net.Uri
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.runtime.derivedStateOf
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.grid.items as gridItems
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PauseCircle
-import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddShoppingCart
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Loyalty
-import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.PointOfSale
-import androidx.compose.material.icons.filled.Redeem
-import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.Stars
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.TableRestaurant
-import androidx.compose.material.icons.filled.Undo
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Divider
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.Text
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.hd.hdmobilepos.data.ActiveOrderDetails
 import com.hd.hdmobilepos.data.Area
@@ -151,19 +22,14 @@ import com.hd.hdmobilepos.data.AppDatabase
 import com.hd.hdmobilepos.data.PosRepository
 import com.hd.hdmobilepos.data.TableSummary
 import com.hd.hdmobilepos.navigation.MainNavHost
-import com.hd.hdmobilepos.ui.component.PosTopBar
 import com.hd.hdmobilepos.ui.theme.PPOSTheme
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -183,14 +49,25 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PPOSTheme {
-                val factory = remember {
-                    object : ViewModelProvider.Factory {
-                        @Suppress("UNCHECKED_CAST")
-                        override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(repo) as T
+                val restaurantVm: RestaurantViewModel = viewModel(
+                    key = "restaurant_vm",
+                    factory = remember {
+                        object : ViewModelProvider.Factory {
+                            @Suppress("UNCHECKED_CAST")
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T = RestaurantViewModel(repo) as T
+                        }
                     }
-                }
-                val vm: MainViewModel = viewModel(factory = factory)
-                MainNavHost(vm = vm)
+                )
+                val foodCourtVm: FoodCourtViewModel = viewModel(
+                    key = "food_court_vm",
+                    factory = remember {
+                        object : ViewModelProvider.Factory {
+                            @Suppress("UNCHECKED_CAST")
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T = FoodCourtViewModel(repo) as T
+                        }
+                    }
+                )
+                MainNavHost(restaurantVm = restaurantVm, foodCourtVm = foodCourtVm)
             }
         }
     }
@@ -369,7 +246,7 @@ data class MainUiState(
     val reseedMessage: String? = null
 )
 
-class MainViewModel(private val repository: PosRepository) : ViewModel() {
+class RestaurantViewModel(private val repository: PosRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
@@ -414,23 +291,6 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
             )
         }
         observeRightPanel(tableId)
-    }
-
-
-    fun buildPaymentSnapshot(tableId: Long?): PaymentOrderSnapshot {
-        val state = _uiState.value
-        val resolvedTableId = tableId ?: state.selectedTableId
-        val table = state.tables.firstOrNull { it.tableId == resolvedTableId }
-        val panel = state.rightPanel
-        val items = panel?.items?.map { PaymentOrderItemUi(name = it.itemName, qty = it.qty, price = it.lineTotal) }.orEmpty()
-        val total = panel?.derivedTotalAmount ?: 0
-        return PaymentOrderSnapshot(
-            tableId = resolvedTableId,
-            tableName = table?.tableName ?: "선택된 테이블 없음",
-            items = items,
-            totalAmount = total,
-            receivedAmount = total
-        )
     }
 
     fun startMoveMode() {
@@ -596,69 +456,6 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
         }
     }
 
-    fun addMenuToSelectedTable(menuName: String, price: Int) {
-        val tableId = _uiState.value.selectedTableId ?: return
-        viewModelScope.launch {
-            repository.addMenuToTable(tableId = tableId, menuName = menuName, price = price)
-        }
-    }
-
-    fun increaseOrderItemQty(orderItemId: Long) {
-        val orderId = _uiState.value.rightPanel?.orderId ?: return
-        viewModelScope.launch {
-            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = 1)
-        }
-    }
-
-    fun decreaseOrderItemQty(orderItemId: Long) {
-        val panel = _uiState.value.rightPanel ?: return
-        val target = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
-        if (target.qty <= 1) {
-            pushSnackbar("수량은 1 이상이어야 합니다")
-            return
-        }
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = -1)
-        }
-    }
-
-    fun changeOrderItemUnitPrice(orderItemId: Long, newPrice: Int) {
-        if (newPrice <= 0) {
-            pushSnackbar("금액은 1원 이상이어야 합니다")
-            return
-        }
-        val panel = _uiState.value.rightPanel ?: return
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = newPrice)
-        }
-    }
-
-    fun toggleOrderItemCanceled(orderItemId: Long) {
-        val panel = _uiState.value.rightPanel ?: return
-        val item = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            if (item.priceSnapshot > 0) {
-                canceledPriceMemory[orderItemId] = item.priceSnapshot
-                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = 0)
-                pushSnackbar("상품 지정취소 처리되었습니다")
-            } else {
-                val restorePrice = canceledPriceMemory[orderItemId] ?: 8000
-                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = restorePrice)
-                pushSnackbar("상품 지정취소가 해제되었습니다")
-            }
-        }
-    }
-
-    fun cancelAllCurrentOrderItems() {
-        val orderId = _uiState.value.rightPanel?.orderId ?: return
-        viewModelScope.launch {
-            repository.cancelAllOrderItems(orderId)
-            pushSnackbar("주문내역이 전체 취소되었습니다")
-        }
-    }
 
     private fun pushSnackbar(message: String) {
         _uiState.update { it.copy(snackbarMessage = message) }
@@ -742,6 +539,131 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
     }
 }
 
+data class FoodCourtUiState(
+    val selectedTableId: Long? = null,
+    val selectedTable: TableSummary? = null,
+    val rightPanel: RightOrderPanelUi? = null,
+    val snackbarMessage: String? = null
+)
+
+class FoodCourtViewModel(private val repository: PosRepository) : ViewModel() {
+    private val _uiState = MutableStateFlow(FoodCourtUiState())
+    val uiState: StateFlow<FoodCourtUiState> = _uiState.asStateFlow()
+
+    private var selectedTableObserverJob: Job? = null
+    private var rightPanelObserverJob: Job? = null
+    private val canceledPriceMemory = mutableMapOf<Long, Int>()
+
+    fun selectTable(tableId: Long) {
+        if (_uiState.value.selectedTableId == tableId) return
+        _uiState.update { it.copy(selectedTableId = tableId) }
+        observeSelectedTable(tableId)
+        observeRightPanel(tableId)
+    }
+
+    fun buildPaymentSnapshot(tableId: Long?): PaymentOrderSnapshot {
+        val state = _uiState.value
+        val resolvedTableId = tableId ?: state.selectedTableId
+        val items = state.rightPanel?.items?.map { PaymentOrderItemUi(name = it.itemName, qty = it.qty, price = it.lineTotal) }.orEmpty()
+        val total = state.rightPanel?.derivedTotalAmount ?: 0
+        return PaymentOrderSnapshot(
+            tableId = resolvedTableId,
+            tableName = state.selectedTable?.tableName ?: "선택된 테이블 없음",
+            items = items,
+            totalAmount = total,
+            receivedAmount = total
+        )
+    }
+
+    fun consumeSnackbarMessage() {
+        _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+    fun addMenuToSelectedTable(menuName: String, price: Int) {
+        val tableId = _uiState.value.selectedTableId ?: return
+        viewModelScope.launch {
+            repository.addMenuToTable(tableId = tableId, menuName = menuName, price = price)
+        }
+    }
+
+    fun increaseOrderItemQty(orderItemId: Long) {
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = 1)
+        }
+    }
+
+    fun decreaseOrderItemQty(orderItemId: Long) {
+        val panel = _uiState.value.rightPanel ?: return
+        val target = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
+        if (target.qty <= 1) {
+            pushSnackbar("수량은 1 이상이어야 합니다")
+            return
+        }
+        viewModelScope.launch {
+            repository.changeOrderItemQty(orderId = panel.orderId, orderItemId = orderItemId, delta = -1)
+        }
+    }
+
+    fun changeOrderItemUnitPrice(orderItemId: Long, newPrice: Int) {
+        if (newPrice <= 0) {
+            pushSnackbar("금액은 1원 이상이어야 합니다")
+            return
+        }
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = newPrice)
+        }
+    }
+
+    fun toggleOrderItemCanceled(orderItemId: Long) {
+        val panel = _uiState.value.rightPanel ?: return
+        val item = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
+        val orderId = panel.orderId
+        viewModelScope.launch {
+            if (item.priceSnapshot > 0) {
+                canceledPriceMemory[orderItemId] = item.priceSnapshot
+                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = 0)
+                pushSnackbar("상품 지정취소 처리되었습니다")
+            } else {
+                val restorePrice = canceledPriceMemory[orderItemId] ?: 8000
+                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = restorePrice)
+                pushSnackbar("상품 지정취소가 해제되었습니다")
+            }
+        }
+    }
+
+    fun cancelAllCurrentOrderItems() {
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.cancelAllOrderItems(orderId)
+            pushSnackbar("주문내역이 전체 취소되었습니다")
+        }
+    }
+
+    private fun observeSelectedTable(tableId: Long) {
+        selectedTableObserverJob?.cancel()
+        selectedTableObserverJob = viewModelScope.launch {
+            repository.observeTableSummaryById(tableId).collectLatest { table ->
+                _uiState.update { it.copy(selectedTable = table) }
+            }
+        }
+    }
+
+    private fun observeRightPanel(tableId: Long) {
+        rightPanelObserverJob?.cancel()
+        rightPanelObserverJob = viewModelScope.launch {
+            repository.observeActiveOrderDetails(tableId).collectLatest { activeOrder ->
+                _uiState.update { it.copy(rightPanel = activeOrder?.toRightPanelUi()) }
+            }
+        }
+    }
+
+    private fun pushSnackbar(message: String) {
+        _uiState.update { it.copy(snackbarMessage = message) }
+    }
+}
+
 
 internal fun formatAmount(value: Int): String = String.format(Locale.KOREA, "%,d", value)
 
@@ -769,4 +691,3 @@ private fun ActiveOrderDetails.toRightPanelUi(): RightOrderPanelUi {
         isTotalMismatch = orderTotalAmount != derivedTotalAmount
     )
 }
-
