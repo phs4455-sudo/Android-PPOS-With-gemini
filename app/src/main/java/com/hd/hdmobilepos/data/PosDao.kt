@@ -60,6 +60,29 @@ interface PosDao {
     )
     suspend fun getTableSummariesOnce(areaId: Long): List<TableSummary>
 
+
+    @Query(
+        """
+        SELECT t.id AS tableId,
+               t.name AS tableName,
+               t.status AS status,
+               t.capacity AS capacity,
+               COALESCE(o.totalAmount, 0) AS totalAmount,
+               o.createdAt AS createdAt
+        FROM tables t
+        LEFT JOIN orders o ON o.id = (
+            SELECT o2.id
+            FROM orders o2
+            WHERE o2.tableId = t.id
+            ORDER BY o2.createdAt DESC, o2.id DESC
+            LIMIT 1
+        )
+        WHERE t.id = :tableId
+        LIMIT 1
+        """
+    )
+    fun observeTableSummaryById(tableId: Long): Flow<TableSummary?>
+
     @Query(
         """
         SELECT oi.nameSnapshot, oi.priceSnapshot, oi.qty
