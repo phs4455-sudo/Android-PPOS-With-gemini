@@ -53,8 +53,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    private fun pushSnackbar(message: String) {
-        _uiState.update { it.copy(snackbarMessage = message) }
-    }
 }

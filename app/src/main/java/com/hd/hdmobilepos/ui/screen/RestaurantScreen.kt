@@ -46,6 +46,7 @@ import com.hd.hdmobilepos.UiMode
 import com.hd.hdmobilepos.formatAmount
 import com.hd.hdmobilepos.ui.component.PosTopBar
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
 @Composable
 fun RestaurantScreen(navController: NavHostController, vm: RestaurantViewModel) {
