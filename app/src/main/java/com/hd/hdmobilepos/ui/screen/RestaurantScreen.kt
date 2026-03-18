@@ -168,7 +168,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun RestaurantScreen(navController: NavHostController, vm: MainViewModel) {
+fun RestaurantScreen(navController: NavHostController, vm: RestaurantViewModel) {
     val uiState by vm.uiState.collectAsState()
     val selectedTable = uiState.tables.firstOrNull { it.tableId == uiState.selectedTableId }
     val snackbarHostState = remember { SnackbarHostState() }

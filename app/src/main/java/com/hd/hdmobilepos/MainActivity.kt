@@ -183,14 +183,25 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PPOSTheme {
-                val factory = remember {
-                    object : ViewModelProvider.Factory {
-                        @Suppress("UNCHECKED_CAST")
-                        override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(repo) as T
+                val restaurantVm: RestaurantViewModel = viewModel(
+                    key = "restaurant_vm",
+                    factory = remember {
+                        object : ViewModelProvider.Factory {
+                            @Suppress("UNCHECKED_CAST")
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T = RestaurantViewModel(repo) as T
+                        }
                     }
-                }
-                val vm: MainViewModel = viewModel(factory = factory)
-                MainNavHost(vm = vm)
+                )
+                val foodCourtVm: FoodCourtViewModel = viewModel(
+                    key = "food_court_vm",
+                    factory = remember {
+                        object : ViewModelProvider.Factory {
+                            @Suppress("UNCHECKED_CAST")
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T = FoodCourtViewModel(repo) as T
+                        }
+                    }
+                )
+                MainNavHost(restaurantVm = restaurantVm, foodCourtVm = foodCourtVm)
             }
         }
     }
@@ -369,7 +380,7 @@ data class MainUiState(
     val reseedMessage: String? = null
 )
 
-class MainViewModel(private val repository: PosRepository) : ViewModel() {
+class RestaurantViewModel(private val repository: PosRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
@@ -414,23 +425,6 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
             )
         }
         observeRightPanel(tableId)
-    }
-
-
-    fun buildPaymentSnapshot(tableId: Long?): PaymentOrderSnapshot {
-        val state = _uiState.value
-        val resolvedTableId = tableId ?: state.selectedTableId
-        val table = state.tables.firstOrNull { it.tableId == resolvedTableId }
-        val panel = state.rightPanel
-        val items = panel?.items?.map { PaymentOrderItemUi(name = it.itemName, qty = it.qty, price = it.lineTotal) }.orEmpty()
-        val total = panel?.derivedTotalAmount ?: 0
-        return PaymentOrderSnapshot(
-            tableId = resolvedTableId,
-            tableName = table?.tableName ?: "선택된 테이블 없음",
-            items = items,
-            totalAmount = total,
-            receivedAmount = total
-        )
     }
 
     fun startMoveMode() {
@@ -596,69 +590,6 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
         }
     }
 
-    fun addMenuToSelectedTable(menuName: String, price: Int) {
-        val tableId = _uiState.value.selectedTableId ?: return
-        viewModelScope.launch {
-            repository.addMenuToTable(tableId = tableId, menuName = menuName, price = price)
-        }
-    }
-
-    fun increaseOrderItemQty(orderItemId: Long) {
-        val orderId = _uiState.value.rightPanel?.orderId ?: return
-        viewModelScope.launch {
-            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = 1)
-        }
-    }
-
-    fun decreaseOrderItemQty(orderItemId: Long) {
-        val panel = _uiState.value.rightPanel ?: return
-        val target = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
-        if (target.qty <= 1) {
-            pushSnackbar("수량은 1 이상이어야 합니다")
-            return
-        }
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = -1)
-        }
-    }
-
-    fun changeOrderItemUnitPrice(orderItemId: Long, newPrice: Int) {
-        if (newPrice <= 0) {
-            pushSnackbar("금액은 1원 이상이어야 합니다")
-            return
-        }
-        val panel = _uiState.value.rightPanel ?: return
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = newPrice)
-        }
-    }
-
-    fun toggleOrderItemCanceled(orderItemId: Long) {
-        val panel = _uiState.value.rightPanel ?: return
-        val item = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
-        val orderId = panel.orderId
-        viewModelScope.launch {
-            if (item.priceSnapshot > 0) {
-                canceledPriceMemory[orderItemId] = item.priceSnapshot
-                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = 0)
-                pushSnackbar("상품 지정취소 처리되었습니다")
-            } else {
-                val restorePrice = canceledPriceMemory[orderItemId] ?: 8000
-                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = restorePrice)
-                pushSnackbar("상품 지정취소가 해제되었습니다")
-            }
-        }
-    }
-
-    fun cancelAllCurrentOrderItems() {
-        val orderId = _uiState.value.rightPanel?.orderId ?: return
-        viewModelScope.launch {
-            repository.cancelAllOrderItems(orderId)
-            pushSnackbar("주문내역이 전체 취소되었습니다")
-        }
-    }
 
     private fun pushSnackbar(message: String) {
         _uiState.update { it.copy(snackbarMessage = message) }
@@ -742,6 +673,131 @@ class MainViewModel(private val repository: PosRepository) : ViewModel() {
     }
 }
 
+data class FoodCourtUiState(
+    val selectedTableId: Long? = null,
+    val selectedTable: TableSummary? = null,
+    val rightPanel: RightOrderPanelUi? = null,
+    val snackbarMessage: String? = null
+)
+
+class FoodCourtViewModel(private val repository: PosRepository) : ViewModel() {
+    private val _uiState = MutableStateFlow(FoodCourtUiState())
+    val uiState: StateFlow<FoodCourtUiState> = _uiState.asStateFlow()
+
+    private var selectedTableObserverJob: Job? = null
+    private var rightPanelObserverJob: Job? = null
+    private val canceledPriceMemory = mutableMapOf<Long, Int>()
+
+    fun selectTable(tableId: Long) {
+        if (_uiState.value.selectedTableId == tableId) return
+        _uiState.update { it.copy(selectedTableId = tableId) }
+        observeSelectedTable(tableId)
+        observeRightPanel(tableId)
+    }
+
+    fun buildPaymentSnapshot(tableId: Long?): PaymentOrderSnapshot {
+        val state = _uiState.value
+        val resolvedTableId = tableId ?: state.selectedTableId
+        val items = state.rightPanel?.items?.map { PaymentOrderItemUi(name = it.itemName, qty = it.qty, price = it.lineTotal) }.orEmpty()
+        val total = state.rightPanel?.derivedTotalAmount ?: 0
+        return PaymentOrderSnapshot(
+            tableId = resolvedTableId,
+            tableName = state.selectedTable?.tableName ?: "선택된 테이블 없음",
+            items = items,
+            totalAmount = total,
+            receivedAmount = total
+        )
+    }
+
+    fun consumeSnackbarMessage() {
+        _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+    fun addMenuToSelectedTable(menuName: String, price: Int) {
+        val tableId = _uiState.value.selectedTableId ?: return
+        viewModelScope.launch {
+            repository.addMenuToTable(tableId = tableId, menuName = menuName, price = price)
+        }
+    }
+
+    fun increaseOrderItemQty(orderItemId: Long) {
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.changeOrderItemQty(orderId = orderId, orderItemId = orderItemId, delta = 1)
+        }
+    }
+
+    fun decreaseOrderItemQty(orderItemId: Long) {
+        val panel = _uiState.value.rightPanel ?: return
+        val target = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
+        if (target.qty <= 1) {
+            pushSnackbar("수량은 1 이상이어야 합니다")
+            return
+        }
+        viewModelScope.launch {
+            repository.changeOrderItemQty(orderId = panel.orderId, orderItemId = orderItemId, delta = -1)
+        }
+    }
+
+    fun changeOrderItemUnitPrice(orderItemId: Long, newPrice: Int) {
+        if (newPrice <= 0) {
+            pushSnackbar("금액은 1원 이상이어야 합니다")
+            return
+        }
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = newPrice)
+        }
+    }
+
+    fun toggleOrderItemCanceled(orderItemId: Long) {
+        val panel = _uiState.value.rightPanel ?: return
+        val item = panel.items.firstOrNull { it.orderItemId == orderItemId } ?: return
+        val orderId = panel.orderId
+        viewModelScope.launch {
+            if (item.priceSnapshot > 0) {
+                canceledPriceMemory[orderItemId] = item.priceSnapshot
+                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = 0)
+                pushSnackbar("상품 지정취소 처리되었습니다")
+            } else {
+                val restorePrice = canceledPriceMemory[orderItemId] ?: 8000
+                repository.changeOrderItemUnitPrice(orderId = orderId, orderItemId = orderItemId, newPrice = restorePrice)
+                pushSnackbar("상품 지정취소가 해제되었습니다")
+            }
+        }
+    }
+
+    fun cancelAllCurrentOrderItems() {
+        val orderId = _uiState.value.rightPanel?.orderId ?: return
+        viewModelScope.launch {
+            repository.cancelAllOrderItems(orderId)
+            pushSnackbar("주문내역이 전체 취소되었습니다")
+        }
+    }
+
+    private fun observeSelectedTable(tableId: Long) {
+        selectedTableObserverJob?.cancel()
+        selectedTableObserverJob = viewModelScope.launch {
+            repository.observeTableSummaryById(tableId).collectLatest { table ->
+                _uiState.update { it.copy(selectedTable = table) }
+            }
+        }
+    }
+
+    private fun observeRightPanel(tableId: Long) {
+        rightPanelObserverJob?.cancel()
+        rightPanelObserverJob = viewModelScope.launch {
+            repository.observeActiveOrderDetails(tableId).collectLatest { activeOrder ->
+                _uiState.update { it.copy(rightPanel = activeOrder?.toRightPanelUi()) }
+            }
+        }
+    }
+
+    private fun pushSnackbar(message: String) {
+        _uiState.update { it.copy(snackbarMessage = message) }
+    }
+}
+
 
 internal fun formatAmount(value: Int): String = String.format(Locale.KOREA, "%,d", value)
 
@@ -769,4 +825,3 @@ private fun ActiveOrderDetails.toRightPanelUi(): RightOrderPanelUi {
         isTotalMismatch = orderTotalAmount != derivedTotalAmount
     )
 }
-
