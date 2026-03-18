@@ -574,12 +574,21 @@ private fun ProductRegisterLeftPane(
                                 Spacer(Modifier.height(24.dp))
                                 Button(
                                     onClick = onNavigateHome,
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp), // 1.2배 수준의 여백 확보
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF005645))
                                 ) {
-                                    Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("홈으로 돌아가기", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                                    Icon(
+                                        imageVector = Icons.Filled.Home, 
+                                        contentDescription = null, 
+                                        modifier = Modifier.size(24.dp) // 20dp -> 24dp (1.2배)
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(
+                                        text = "홈으로 돌아가기", 
+                                        fontWeight = FontWeight.ExtraBold, 
+                                        fontSize = 20.sp // 17sp -> 20sp (약 1.2배)
+                                    )
                                 }
                             }
                         }
@@ -767,7 +776,7 @@ private fun ProductRegisterRightPane(
             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDADCE0))
         ) {
             Column(Modifier.fillMaxSize()) {
-                // Category Tabs: Scaled 1.1x
+                // Category Tabs: Scaled for better visibility
                 ScrollableTabRow(
                     selectedTabIndex = uiState.categories.indexOf(uiState.selectedCategory).coerceAtLeast(0),
                     containerColor = Color.White,
@@ -779,13 +788,21 @@ private fun ProductRegisterRightPane(
                         Tab(
                             selected = uiState.selectedCategory == category,
                             onClick = { onSelectCategory(category) },
-                            modifier = Modifier.height(44.dp) // Reduced from 48dp
+                            modifier = Modifier.height(52.dp) // 높이 소폭 상향
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically, 
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
                                 if (index == 0) {
-                                    Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFF2C94C), modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFF2C94C), modifier = Modifier.size(18.dp))
                                 }
-                                Text(category, fontWeight = if (uiState.selectedCategory == category) FontWeight.ExtraBold else FontWeight.Bold, fontSize = 14.sp)
+                                Text(
+                                    text = category, 
+                                    fontWeight = if (uiState.selectedCategory == category) FontWeight.ExtraBold else FontWeight.Bold, 
+                                    fontSize = 16.sp // 1) 폰트 크기 1.1배 상향 (14sp -> 16sp)
+                                )
                             }
                         }
                     }
