@@ -174,6 +174,20 @@ fun RestaurantScreen(navController: NavHostController, vm: RestaurantViewModel) 
                                         containerColor = containerColor,
                                         contentColor = contentColor
                                     ),
+                                    border = BorderStroke(
+                                        width = when {
+                                            isDragActiveSource -> 4.dp
+                                            selected || isSelectedTarget -> 2.dp
+                                            else -> 1.dp
+                                        },
+                                        color = when {
+                                            isDragActiveSource -> Color(0xFFFFB300)
+                                            isSelectedTarget -> Color(0xFF1E88E5)
+                                            isSelectedSource -> Color(0xFF005645)
+                                            isTargetCandidate -> Color(0xFF8BC34A)
+                                            else -> Color(0xFFDADCE0)
+                                        }
+                                    ),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(154.dp)
@@ -188,21 +202,6 @@ fun RestaurantScreen(navController: NavHostController, vm: RestaurantViewModel) 
                                             }
                                         }
                                         .zIndex(if (draggingTableId == table.tableId) 10f else 0f)
-                                        .then(androidx.compose.foundation.border(
-                                            width = when {
-                                                isDragActiveSource -> 4.dp
-                                                selected || isSelectedTarget -> 2.dp
-                                                else -> 1.dp
-                                            },
-                                            color = when {
-                                                isDragActiveSource -> Color(0xFFFFB300)
-                                                isSelectedTarget -> Color(0xFF1E88E5)
-                                                isSelectedSource -> Color(0xFF005645)
-                                                isTargetCandidate -> Color(0xFF8BC34A)
-                                                else -> Color(0xFFDADCE0)
-                                            },
-                                            shape = RoundedCornerShape(10.dp)
-                                        ))
                                         .pointerInput(table.tableId) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
