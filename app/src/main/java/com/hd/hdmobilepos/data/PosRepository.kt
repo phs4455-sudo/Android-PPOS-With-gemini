@@ -12,6 +12,8 @@ class PosRepository(private val dao: PosDao) {
 
     suspend fun getTablesOnce(areaId: Long): List<TableSummary> = dao.getTableSummariesOnce(areaId)
 
+    fun observeTableSummaryById(tableId: Long): Flow<TableSummary?> = dao.observeTableSummaryById(tableId)
+
     suspend fun getTableCount(): Int = dao.getTableCount()
 
     suspend fun getAreaCount(): Int = dao.getAreaCount()
