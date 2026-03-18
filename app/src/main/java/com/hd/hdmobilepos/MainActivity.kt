@@ -427,22 +427,23 @@ class RestaurantViewModel(private val repository: PosRepository) : ViewModel() {
         observeRightPanel(tableId)
     }
 
-
-    private fun pushSnackbar(message: String) {
-        _uiState.update { it.copy(snackbarMessage = message) }
-    }
-
-    fun reseedDemoData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isReseeding = true, reseedMessage = null) }
-            try {
-                repository.forceReseedDemoData()
-                applyOneShotState("재생성 완료")
-            } catch (t: Throwable) {
-                _uiState.update { it.copy(reseedMessage = "재생성 실패: ${t.message ?: "unknown"}") }
-            } finally {
-                _uiState.update { it.copy(isReseeding = false) }
-            }
+    fun startMoveMode() {
+        val sourceId = _uiState.value.selectedTableId
+        if (sourceId == null) {
+            pushSnackbar("먼저 원본 테이블을 선택하세요")
+            return
+        }
+        if (_uiState.value.rightPanel == null) {
+            pushSnackbar("이동할 활성 주문이 없습니다")
+            return
+        }
+        _uiState.update {
+            it.copy(
+                uiMode = UiMode.SELECT_TARGET_FOR_MOVE,
+                selectedSourceTableId = sourceId,
+                selectedTargetTableId = null,
+                pendingAction = null
+            )
         }
     }
 
@@ -507,6 +508,70 @@ class RestaurantViewModel(private val repository: PosRepository) : ViewModel() {
                 }
             }
         }
+    }
+}
+
+data class FoodCourtUiState(
+    val selectedTableId: Long? = null,
+    val selectedTable: TableSummary? = null,
+    val rightPanel: RightOrderPanelUi? = null,
+    val snackbarMessage: String? = null
+)
+
+class FoodCourtViewModel(private val repository: PosRepository) : ViewModel() {
+    private val _uiState = MutableStateFlow(FoodCourtUiState())
+    val uiState: StateFlow<FoodCourtUiState> = _uiState.asStateFlow()
+
+    private var selectedTableObserverJob: Job? = null
+    private var rightPanelObserverJob: Job? = null
+    private val canceledPriceMemory = mutableMapOf<Long, Int>()
+
+    fun selectTable(tableId: Long) {
+        if (_uiState.value.selectedTableId == tableId) return
+        _uiState.update { it.copy(selectedTableId = tableId) }
+        observeSelectedTable(tableId)
+        observeRightPanel(tableId)
+    }
+
+    fun buildPaymentSnapshot(tableId: Long?): PaymentOrderSnapshot {
+        val state = _uiState.value
+        val resolvedTableId = tableId ?: state.selectedTableId
+        val items = state.rightPanel?.items?.map { PaymentOrderItemUi(name = it.itemName, qty = it.qty, price = it.lineTotal) }.orEmpty()
+        val total = state.rightPanel?.derivedTotalAmount ?: 0
+        return PaymentOrderSnapshot(
+            tableId = resolvedTableId,
+            tableName = state.selectedTable?.tableName ?: "선택된 테이블 없음",
+            items = items,
+            totalAmount = total,
+            receivedAmount = total
+        )
+    }
+
+    fun consumeSnackbarMessage() {
+        _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+
+    private fun observeSelectedTable(tableId: Long) {
+        selectedTableObserverJob?.cancel()
+        selectedTableObserverJob = viewModelScope.launch {
+            repository.observeTableSummaryById(tableId).collectLatest { table ->
+                _uiState.update { it.copy(selectedTable = table) }
+            }
+        }
+    }
+
+    private fun observeRightPanel(tableId: Long) {
+        rightPanelObserverJob?.cancel()
+        rightPanelObserverJob = viewModelScope.launch {
+            repository.observeActiveOrderDetails(tableId).collectLatest { activeOrder ->
+                _uiState.update { it.copy(rightPanel = activeOrder?.toRightPanelUi()) }
+            }
+        }
+    }
+
+    private fun pushSnackbar(message: String) {
+        _uiState.update { it.copy(snackbarMessage = message) }
     }
 }
 
