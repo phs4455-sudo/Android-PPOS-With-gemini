@@ -179,7 +179,7 @@ private fun productRegisterRoute(barcode: String? = null): String {
 }
 
 @Composable
-fun MainNavHost(vm: MainViewModel) {
+fun MainNavHost(restaurantVm: RestaurantViewModel, foodCourtVm: FoodCourtViewModel) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = ROUTE_SUPER_HOME) {
         composable(ROUTE_SUPER_HOME) {
@@ -194,10 +194,10 @@ fun MainNavHost(vm: MainViewModel) {
                 }
             )
         }
-        composable(ROUTE_RESTAURANT) { RestaurantScreen(navController, vm) }
+        composable(ROUTE_RESTAURANT) { RestaurantScreen(navController, restaurantVm) }
         composable("food/{tableId}") { backStackEntry ->
             val tableId = backStackEntry.arguments?.getString("tableId")?.toLongOrNull()
-            FoodCourtScreen(navController = navController, vm = vm, tableId = tableId)
+            FoodCourtScreen(navController = navController, vm = foodCourtVm, tableId = tableId)
         }
         composable(ROUTE_PRODUCT_REGISTER_WITH_ARG) { backStackEntry ->
             val barcode = backStackEntry.arguments?.getString(ARG_BARCODE)
@@ -213,7 +213,7 @@ fun MainNavHost(vm: MainViewModel) {
         }
         composable("payment/{tableId}") { backStackEntry ->
             val tableId = backStackEntry.arguments?.getString("tableId")?.toLongOrNull()
-            val snapshot = remember(tableId, vm.uiState.collectAsState().value.rightPanel) { vm.buildPaymentSnapshot(tableId) }
+            val snapshot = remember(tableId, foodCourtVm.uiState.collectAsState().value.rightPanel) { foodCourtVm.buildPaymentSnapshot(tableId) }
             val paymentVm: PaymentViewModel = viewModel(
                 key = "payment_${tableId ?: -1}",
                 factory = object : ViewModelProvider.Factory {
